@@ -251,31 +251,55 @@ class QgisMapExporter:
 
                 # show some information about the feature
                 #print (geom.type())
-                x = geom.asPolyline()
-                print ("Line: %d points" % len(x))
-                fp.write("<polyline color=\"8\" linetype=\"0\" linesize=\"2\">\n")
-                #fp.write("<fillarea color=\"15\" linetype=\"0\" filltype=\"0\" linesize=\"1\">\n")
-                fp.write("<coords type=\"decimal\">\n")
+                
+                if geom.type() == 1:
+                    x = geom.asPolyline()
+                    print ("Line: %d points" % len(x))
+                    fp.write("<polyline color=\"8\" linetype=\"0\" linesize=\"2\">\n")
+                    #fp.write("<fillarea color=\"15\" linetype=\"0\" filltype=\"0\" linesize=\"1\">\n")
+                    fp.write("<coords type=\"decimal\">\n")
 
-                x = geom.asPolyline()
-                print ("Line: %d points" % len(x))
-                i = 0
-                for pt in x:
-                        trans=self.transform4326.transform(pt)
-                        s=trans.toString()
-                        #print "pt", pt,s
-                        #point=s[s.find("(")+1:s.find(")")]
-                        #point=s.trim()
-                        i += 1
-                        #Last point == first point, we dont want that
-                        if i<len(x)+1:
+                    x = geom.asPolyline()
+                    print ("Line: %d points" % len(x))
+                    i = 0
+                    for pt in x:
+                            trans=self.transform4326.transform(pt)
+                            s=trans.toString()
+                            #print "pt", pt,s
+                            #point=s[s.find("(")+1:s.find(")")]
+                            #point=s.trim()
+                            i += 1
+                            #Last point == first point, we dont want that
+                            if i<len(x)+1:
+                                point = re.sub(r"\s+", "", s, flags=re.UNICODE)
+                                fp.write(point)
+                                fp.write("\n")
+                    fp.write("</coords>\n")
+                    fp.write("</polyline>\n")
+                    #fp.write("</fillarea>\n")
+               
+                elif geom.type() == 2:
+                # QGis.Polygon:
+                    x = geom.asPolygon()
+                    first_poly = geom.asPolygon()
+                    print (first_poly)
+                    numPts = 0
+                    for ring in x:
+                        numPts += len(ring)
+                        print (ring)
+                        fp.write("<fillarea color=\"3\" linetype=\"0\" filltype=\"0\" linesize=\"1\">\n")
+                        fp.write("<coords type=\"decimal\">\n")                    
+                        for pt in ring:
+                            trans=self.transform4326.transform(pt)
+                            s=trans.toString()
                             point = re.sub(r"\s+", "", s, flags=re.UNICODE)
                             fp.write(point)
                             fp.write("\n")
-                fp.write("</coords>\n")
-                fp.write("</polyline>\n")
-                #fp.write("</fillarea>\n")
-               
+                        fp.write("</coords>\n")
+                        fp.write("</fillarea>\n")
+                else:
+                     print ("Unknown")
+
 
             fp.write("</elements>\n")
             fp.write("</map>\n")
