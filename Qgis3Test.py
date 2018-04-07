@@ -240,7 +240,9 @@ class QgisMapExporter:
 
             self.epsg4326 = QgsCoordinateReferenceSystem("EPSG:4326")
             layerCRS = layer.crs()
-            self.transform4326 = QgsCoordinateTransform(layerCRS, self.epsg4326)
+            #self.transform4326 = QgsCoordinateTransform(layerCRS, self.epsg4326)
+            self.transform4326 = QgsCoordinateTransform(layerCRS,
+                                   QgsCoordinateReferenceSystem("EPSG:4326"), QgsProject.instance())
 
             iter = layer.getFeatures()
             for feature in iter:

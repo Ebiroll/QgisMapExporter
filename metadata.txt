@@ -8,7 +8,7 @@
 
 [general]
 name=QgisMapExporter
-qgisMinimumVersion=2.0
+qgisMinimumVersion=3.0
 description=tdp map exporter
 version=0.1
 author=Olof Astrand
