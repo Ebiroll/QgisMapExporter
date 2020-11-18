@@ -104,6 +104,22 @@
     <bool>false</bool>
    </property>
   </widget>
+    <widget class="QCheckBox" name="export_map">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>190</y>
+     <width>131</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>export as map</string>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections>

@@ -28,8 +28,8 @@ from qgis.core import QgsMapLayerProxyModel, QgsVectorLayer, QgsFeature, QgsGeom
 from qgis.gui import QgsMessageBar
 from qgis.core import QgsPoint , QgsGeometry ,QgsFeature
 
-from qgis.core import  QgsCoordinateTransform , QgsCoordinateReferenceSystem
-
+from qgis.core import  QgsCoordinateTransform , QgsCoordinateReferenceSystem 
+# from qgis.core import QGis, QgsFeatureRequest, QgsFeature, QgsGeometry, QgsWKBTypes 
 #import os.path
 import re
 #import xml.etree.ElementTree as et
@@ -43,7 +43,14 @@ from .resources import *
 # Import the code for the dialog
 from .Qgis3Test_dialog import QgisMapExporterDialog
 import os.path
+import os
 
+def dd2dms(deg):
+    d = int(deg)
+    md = abs(deg - d) * 60
+    m = int(md)
+    sd = (md - m) * 60
+    return [d, m, sd]
 
 class QgisMapExporter:
     """QGIS Plugin Implementation."""
@@ -199,6 +206,107 @@ class QgisMapExporter:
         # remove the toolbar
         del self.toolbar
 
+    def export_map(self):
+        print ("Exporting map")
+        filename = self.dlg.lineEdit.text()
+        fp = open(filename, "w")
+        print(filename)
+        even = 1
+        layer = self.iface.activeLayer()
+        self.epsg4326 = QgsCoordinateReferenceSystem("EPSG:4326")
+        layerCRS = layer.crs()
+        #self.transform4326 = QgsCoordinateTransform(layerCRS, self.epsg4326)
+        self.transform4326 = QgsCoordinateTransform(layerCRS,
+                                QgsCoordinateReferenceSystem("EPSG:4326"), QgsProject.instance())
+
+        iter = layer.getFeatures()
+        fp.write("***MAP MALAREN\n")
+        for feature in iter:
+            # retrieve every feature with its geometry and attributes
+            # fetch geometry
+            geom = feature.geometry()
+            #print ("Feature ID %d: " % feature.id())
+
+            # show some information about the feature
+            print (geom.type())
+            
+            if geom.type() == 2:
+                #print(geom.wkbType())
+                #print(geom.asWkt()) 
+                if geom.wkbType() == 6:
+                    print ("YES")
+                else:
+                    print ("Damn")
+                # is WKBMultiPolygon
+                y = geom.asMultiPolygon()
+                #print(y)
+                #first_poly = geom.asPolygon()
+                #print (first_poly)
+                numPts = 0
+                fp.write("linewidth 1\n")                    
+                fp.write("linetype 0\n")                    
+                fp.write("linecolourix 4\n")                    
+
+                for ring in y:
+                    #numPts += len(ring)
+                    print("X")
+                    #print (ring)
+                    #fp.write("<fillarea color=\"3\" linetype=\"0\" filltype=\"0\" linesize=\"1\">\n")
+                    #fp.write("<coords type=\"decimal\">\n")
+                    for poly in ring:
+                        numPts += len(poly)
+                        even = 1
+                        le=0
+                        for fe in poly:
+                            le += 1
+                        fp.write("polyline ");  
+                        fp.write(str(le))
+                        fp.write("\n")
+                        for pt in poly:                            
+                            point=self.transform4326.transform(pt)
+                            #print("trans")
+                            #print(trans)                            
+                            deg=abs(float(point.y()))
+                            d = int(deg)
+                            md = abs(deg - d) * 60
+                            m = int(md)
+                            s = int(1*(md - m) * 60)
+                            #For airport maps 
+                            #  s = int(100*(md - m) * 60)
+                            #line1 = u'{:0>2}{:0>2}{:0>4}N'.format(d,m,s)
+                            line1 = u'{:0>2}{:0>2}{:0>2}N'.format(d,m,s)
+                            #print(dd2dms(dd))
+                            deg=abs(float(point.x()))
+                            d = int(deg)
+                            md = abs(deg - d) * 60
+                            m = int(md)
+                            s = int(1*(md - m) * 60)
+                            # For airport maps
+                            # s = int(100*(md - m) * 60)
+                            # line2 = u'{:0>3}{:0>2}{:0>4}E'.format(d,m,s)
+                            line2 = u'{:0>3}{:0>2}{:0>2}E'.format(d,m,s)
+                            line3 = u'{},{}'.format(point.x(), point.y())
+                            fp.write(line1)
+                            fp.write(line2)
+                            print(line1,line2)
+                            #fp.write(' ')
+                            #fp.write(line3)
+                            if even%2 ==0:
+                                    print('\n')
+                                    fp.write('\n')
+                            else:
+                                    print(' ')
+                                    fp.write(' ')
+                            even = even + 1                            
+                        print(numPts)
+                        numPts=0
+                        fp.write("\n")
+            else:
+                print ("Unknown Geometry")
+            fp.write("\n")
+        fp.close()
+
+
 
     def run(self):
         """Run method that performs all the real work"""
@@ -208,6 +316,8 @@ class QgisMapExporter:
         #for layer in layers:
         #    layer_list.append(layer.name())
         #    self.dlg.comboBox.addItems(layer_list)
+        cwd = os.getcwd()
+        print(cwd)
 
         self.dlg.show()
         # Run the dialog event loop
@@ -220,92 +330,95 @@ class QgisMapExporter:
             #selectedLayer = layers[selectedLayerIndex]
             print("running")
 
-            filename = self.dlg.lineEdit.text()
-            #input_file = open(filename, 'w')
-            print("file" , filename)
-            #fp = open(filename, "w")
-            layer = self.iface.activeLayer()
+            if self.dlg.export_map.isChecked():
+                self.export_map()
+            else:
+                filename = self.dlg.lineEdit.text()
+                #input_file = open(filename, 'w')
+                print("file" , filename)
+                #fp = open(filename, "w")
+                layer = self.iface.activeLayer()
 
-            fp = open("test.xml", "w")
-            fp.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
-            fp.write("<map>\n")
-            fp.write("<elements count=\"")
+                fp = open("test.xml", "w")
+                fp.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
+                fp.write("<map>\n")
+                fp.write("<elements count=\"")
 
-            count=layer.getFeatures( )
-            le=0
-            for fe in count:
-                    le += 1
-            fp.write(str(le))
-            fp.write("\">\n")
+                count=layer.getFeatures( )
+                le=0
+                for fe in count:
+                        le += 1
+                fp.write(str(le))
+                fp.write("\">\n")
 
-            self.epsg4326 = QgsCoordinateReferenceSystem("EPSG:4326")
-            layerCRS = layer.crs()
-            #self.transform4326 = QgsCoordinateTransform(layerCRS, self.epsg4326)
-            self.transform4326 = QgsCoordinateTransform(layerCRS,
-                                   QgsCoordinateReferenceSystem("EPSG:4326"), QgsProject.instance())
+                self.epsg4326 = QgsCoordinateReferenceSystem("EPSG:4326")
+                layerCRS = layer.crs()
+                #self.transform4326 = QgsCoordinateTransform(layerCRS, self.epsg4326)
+                self.transform4326 = QgsCoordinateTransform(layerCRS,
+                                    QgsCoordinateReferenceSystem("EPSG:4326"), QgsProject.instance())
 
-            iter = layer.getFeatures()
-            for feature in iter:
-                # retrieve every feature with its geometry and attributes
-                # fetch geometry
-                geom = feature.geometry()
-                #print ("Feature ID %d: " % feature.id())
+                iter = layer.getFeatures()
+                for feature in iter:
+                    # retrieve every feature with its geometry and attributes
+                    # fetch geometry
+                    geom = feature.geometry()
+                    #print ("Feature ID %d: " % feature.id())
 
-                # show some information about the feature
-                #print (geom.type())
+                    # show some information about the feature
+                    #print (geom.type())
+                    
+                    if geom.type() == 1:
+                        x = geom.asPolyline()
+                        print ("Line: %d points" % len(x))
+                        fp.write("<polyline color=\"8\" linetype=\"0\" linesize=\"2\">\n")
+                        #fp.write("<fillarea color=\"15\" linetype=\"0\" filltype=\"0\" linesize=\"1\">\n")
+                        fp.write("<coords type=\"decimal\">\n")
+
+                        x = geom.asPolyline()
+                        print ("Line: %d points" % len(x))
+                        i = 0
+                        for pt in x:
+                                trans=self.transform4326.transform(pt)
+                                s=trans.toString()
+                                #print "pt", pt,s
+                                #point=s[s.find("(")+1:s.find(")")]
+                                #point=s.trim()
+                                i += 1
+                                #Last point == first point, we dont want that
+                                if i<len(x)+1:
+                                    point = re.sub(r"\s+", "", s, flags=re.UNICODE)
+                                    fp.write(point)
+                                    fp.write("\n")
+                        fp.write("</coords>\n")
+                        fp.write("</polyline>\n")
+                        #fp.write("</fillarea>\n")
                 
-                if geom.type() == 1:
-                    x = geom.asPolyline()
-                    print ("Line: %d points" % len(x))
-                    fp.write("<polyline color=\"8\" linetype=\"0\" linesize=\"2\">\n")
-                    #fp.write("<fillarea color=\"15\" linetype=\"0\" filltype=\"0\" linesize=\"1\">\n")
-                    fp.write("<coords type=\"decimal\">\n")
-
-                    x = geom.asPolyline()
-                    print ("Line: %d points" % len(x))
-                    i = 0
-                    for pt in x:
-                            trans=self.transform4326.transform(pt)
-                            s=trans.toString()
-                            #print "pt", pt,s
-                            #point=s[s.find("(")+1:s.find(")")]
-                            #point=s.trim()
-                            i += 1
-                            #Last point == first point, we dont want that
-                            if i<len(x)+1:
+                    elif geom.type() == 2:
+                    # QGis.Polygon:
+                        x = geom.asPolygon()
+                        first_poly = geom.asPolygon()
+                        print (first_poly)
+                        numPts = 0
+                        for ring in x:
+                            numPts += len(ring)
+                            print (ring)
+                            fp.write("<fillarea color=\"3\" linetype=\"0\" filltype=\"0\" linesize=\"1\">\n")
+                            fp.write("<coords type=\"decimal\">\n")                    
+                            for pt in ring:
+                                trans=self.transform4326.transform(pt)
+                                s=trans.toString()
                                 point = re.sub(r"\s+", "", s, flags=re.UNICODE)
                                 fp.write(point)
                                 fp.write("\n")
-                    fp.write("</coords>\n")
-                    fp.write("</polyline>\n")
-                    #fp.write("</fillarea>\n")
-               
-                elif geom.type() == 2:
-                # QGis.Polygon:
-                    x = geom.asPolygon()
-                    first_poly = geom.asPolygon()
-                    print (first_poly)
-                    numPts = 0
-                    for ring in x:
-                        numPts += len(ring)
-                        print (ring)
-                        fp.write("<fillarea color=\"3\" linetype=\"0\" filltype=\"0\" linesize=\"1\">\n")
-                        fp.write("<coords type=\"decimal\">\n")                    
-                        for pt in ring:
-                            trans=self.transform4326.transform(pt)
-                            s=trans.toString()
-                            point = re.sub(r"\s+", "", s, flags=re.UNICODE)
-                            fp.write(point)
-                            fp.write("\n")
-                        fp.write("</coords>\n")
-                        fp.write("</fillarea>\n")
-                else:
-                     print ("Unknown")
+                            fp.write("</coords>\n")
+                            fp.write("</fillarea>\n")
+                    else:
+                        print ("Unknown")
 
 
-            fp.write("</elements>\n")
-            fp.write("</map>\n")
-            fp.close()
+                fp.write("</elements>\n")
+                fp.write("</map>\n")
+                fp.close()
 
 
                 #if geom.type() == QgsPoint:
