@@ -62,7 +62,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Select input file</string>
+    <string>File/map name</string>
    </property>
   </widget>
   <widget class="QLineEdit" name="lineEdit">
