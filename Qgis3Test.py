@@ -212,6 +212,7 @@ class QgisMapExporter:
         fp = open(filename, "w")
         print(filename)
         even = 1
+        numPts = 0
         layer = self.iface.activeLayer()
         self.epsg4326 = QgsCoordinateReferenceSystem("EPSG:4326")
         layerCRS = layer.crs()
@@ -220,7 +221,9 @@ class QgisMapExporter:
                                 QgsCoordinateReferenceSystem("EPSG:4326"), QgsProject.instance())
 
         iter = layer.getFeatures()
-        fp.write("***MAP MALAREN\n")
+        fp.write("***MAP ")
+        fp.write(filename);
+        fp.write("\n")
         for feature in iter:
             # retrieve every feature with its geometry and attributes
             # fetch geometry
@@ -233,79 +236,162 @@ class QgisMapExporter:
             if geom.type() == 2:
                 #print(geom.wkbType())
                 #print(geom.asWkt()) 
-                if geom.wkbType() == 6:
-                    print ("YES")
-                else:
-                    print ("Damn")
                 # is WKBMultiPolygon
-                y = geom.asMultiPolygon()
                 #print(y)
                 #first_poly = geom.asPolygon()
-                #print (first_poly)
-                numPts = 0
-                fp.write("linewidth 1\n")                    
+                #print (first_poly)                
+                fp.write("linewidth 0\n")                    
                 fp.write("linetype 0\n")                    
-                fp.write("linecolourix 4\n")                    
+                fp.write("linecolourix 3\n")                    
 
-                for ring in y:
-                    #numPts += len(ring)
-                    print("X")
-                    #print (ring)
-                    #fp.write("<fillarea color=\"3\" linetype=\"0\" filltype=\"0\" linesize=\"1\">\n")
-                    #fp.write("<coords type=\"decimal\">\n")
-                    for poly in ring:
-                        numPts += len(poly)
-                        even = 1
-                        le=0
-                        for fe in poly:
-                            le += 1
-                        fp.write("polyline ");  
-                        fp.write(str(le))
-                        fp.write("\n")
-                        for pt in poly:                            
-                            point=self.transform4326.transform(pt)
-                            #print("trans")
-                            #print(trans)                            
-                            deg=abs(float(point.y()))
-                            d = int(deg)
-                            md = abs(deg - d) * 60
-                            m = int(md)
-                            s = int(1*(md - m) * 60)
-                            #For airport maps 
-                            #  s = int(100*(md - m) * 60)
-                            #line1 = u'{:0>2}{:0>2}{:0>4}N'.format(d,m,s)
-                            line1 = u'{:0>2}{:0>2}{:0>2}N'.format(d,m,s)
-                            #print(dd2dms(dd))
-                            deg=abs(float(point.x()))
-                            d = int(deg)
-                            md = abs(deg - d) * 60
-                            m = int(md)
-                            s = int(1*(md - m) * 60)
-                            # For airport maps
-                            # s = int(100*(md - m) * 60)
-                            # line2 = u'{:0>3}{:0>2}{:0>4}E'.format(d,m,s)
-                            line2 = u'{:0>3}{:0>2}{:0>2}E'.format(d,m,s)
-                            line3 = u'{},{}'.format(point.x(), point.y())
-                            fp.write(line1)
-                            fp.write(line2)
-                            print(line1,line2)
-                            #fp.write(' ')
-                            #fp.write(line3)
-                            if even%2 ==0:
-                                    print('\n')
-                                    fp.write('\n')
-                            else:
-                                    print(' ')
-                                    fp.write(' ')
-                            even = even + 1                            
-                        print(numPts)
-                        numPts=0
-                        fp.write("\n")
+                if geom.wkbType() == 6:
+                    y = geom.asMultiPolygon()                
+                    for ring in y:
+                        #numPts += len(ring)
+                        print("X")
+                        #print (ring)
+                        #fp.write("<fillarea color=\"3\" linetype=\"0\" filltype=\"0\" linesize=\"1\">\n")
+                        #fp.write("<coords type=\"decimal\">\n")
+                        for poly in ring:
+                            numPts += len(poly)
+                            even = 1
+                            le=0
+                            for fe in poly:
+                                le += 1
+                            fp.write("polyline ");  
+                            fp.write(str(le))
+                            fp.write("\n")
+                            for pt in poly:                            
+                                point=self.transform4326.transform(pt)
+                                #print("trans")
+                                #print(trans)                            
+                                deg=abs(float(point.y()))
+                                d = int(deg)
+                                md = abs(deg - d) * 60
+                                m = int(md)
+                                s = int(1*(md - m) * 60)
+                                #For airport maps 
+                                #  s = int(100*(md - m) * 60)
+                                #line1 = u'{:0>2}{:0>2}{:0>4}N'.format(d,m,s)
+                                line1 = u'{:0>2}{:0>2}{:0>2}N'.format(d,m,s)
+                                #print(dd2dms(dd))
+                                deg=abs(float(point.x()))
+                                d = int(deg)
+                                md = abs(deg - d) * 60
+                                m = int(md)
+                                s = int(1*(md - m) * 60)
+                                # For airport maps
+                                # s = int(100*(md - m) * 60)
+                                # line2 = u'{:0>3}{:0>2}{:0>4}E'.format(d,m,s)
+                                line2 = u'{:0>3}{:0>2}{:0>2}E'.format(d,m,s)
+                                line3 = u'{},{}'.format(point.x(), point.y())
+                                fp.write(line1)
+                                fp.write(line2)
+                                print(line1,line2)
+                                #fp.write(' ')
+                                #fp.write(line3)
+                                if even%2 ==0:
+                                        print('\n')
+                                        fp.write('\n')
+                                else:
+                                        print(' ')
+                                        fp.write(' ')
+                                even = even + 1                            
+                            print(numPts)
+                            numPts=0
+                            fp.write("\n")
+                else:
+                    print ("Unknown wkbType")
+                    print(geom.wkbType())
+            elif geom.type() == 1:
+                if geom.wkbType() == 5:
+                    x = geom.asMultiPolyline()
+                else:
+                    x = geom.asPolyline()
+                for poly in x:
+                    #print(poly)
+                    numPts += len(poly)
+                    even = 1
+                    le = numPts
+                    #for fe in poly:
+                    #    le += 1                        
+                    fp.write("linewidth 0\n")                    
+                    fp.write("linetype 0\n")                    
+                    fp.write("linecolourix 3\n")                    
+                    fp.write("polyline ");  
+                    fp.write(str(le))
+                    fp.write("\n")
+                    for pt in poly:                            
+                        point=self.transform4326.transform(pt)
+                        #print("trans")
+                        #print(trans)                            
+                        deg=abs(float(point.y()))
+                        d = int(deg)
+                        md = abs(deg - d) * 60
+                        m = int(md)
+                        s = int(1*(md - m) * 60)
+                        #For airport maps 
+                        #  s = int(100*(md - m) * 60)
+                        #line1 = u'{:0>2}{:0>2}{:0>4}N'.format(d,m,s)
+                        line1 = u'{:0>2}{:0>2}{:0>2}N'.format(d,m,s)
+                        #print(dd2dms(dd))
+                        deg=abs(float(point.x()))
+                        d = int(deg)
+                        md = abs(deg - d) * 60
+                        m = int(md)
+                        s = int(1*(md - m) * 60)
+                        # For airport maps
+                        # s = int(100*(md - m) * 60)
+                        # line2 = u'{:0>3}{:0>2}{:0>4}E'.format(d,m,s)
+                        line2 = u'{:0>3}{:0>2}{:0>2}E'.format(d,m,s)
+                        line3 = u'{},{}'.format(point.x(), point.y())
+                        fp.write(line1)
+                        fp.write(line2)
+                        #print(line1,line2)
+                        #fp.write(' ')
+                        #fp.write(line3)
+                        if even%2 ==0:
+                                #print('\n')
+                                fp.write('\n')
+                        else:
+                                #print(' ')
+                                fp.write(' ')
+                        even = even + 1                            
+                    print(numPts)
+                    numPts=0
+                    fp.write("\n")
+                    #trans=self.transform4326.transform(pt)
+                    #s=trans.toString()
+                    #print("pt", pt,s)
             else:
                 print ("Unknown Geometry")
             fp.write("\n")
         fp.close()
 
+    def export_multipolyline_xml(self,polyline,fp):
+        print ("Line: %d points" % len(polyline))
+        fp.write("<polyline color=\"3\" linetype=\"0\" linesize=\"0\">\n")
+        #fp.write("<fillarea color=\"15\" linetype=\"0\" filltype=\"0\" linesize=\"1\">\n")
+        fp.write("<coords type=\"decimal\">\n")
+
+        for x in polyline:
+            print ("Line: %d points" % len(x))
+            i = 0
+            for pt in x:
+                    trans=self.transform4326.transform(pt)
+                    s=trans.toString()
+                    #print "pt", pt,s
+                    #point=s[s.find("(")+1:s.find(")")]
+                    #point=s.trim()
+                    i += 1
+                    #Last point == first point, we dont want that
+                    if i<len(x)+1:
+                        point = re.sub(r"\s+", "", s, flags=re.UNICODE)
+                        fp.write(point)
+                        fp.write("\n")
+            fp.write("</coords>\n")
+            fp.write("</polyline>\n")
+            #fp.write("</fillarea>\n")
 
 
     def run(self):
@@ -339,7 +425,8 @@ class QgisMapExporter:
                 #fp = open(filename, "w")
                 layer = self.iface.activeLayer()
 
-                fp = open("test.xml", "w")
+                filename = self.dlg.lineEdit.text() + ".xml"
+                fp = open(filename, "w")
                 fp.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
                 fp.write("<map>\n")
                 fp.write("<elements count=\"")
@@ -368,31 +455,36 @@ class QgisMapExporter:
                     #print (geom.type())
                     
                     if geom.type() == 1:
-                        x = geom.asPolyline()
-                        print ("Line: %d points" % len(x))
-                        fp.write("<polyline color=\"8\" linetype=\"0\" linesize=\"2\">\n")
-                        #fp.write("<fillarea color=\"15\" linetype=\"0\" filltype=\"0\" linesize=\"1\">\n")
-                        fp.write("<coords type=\"decimal\">\n")
+                        #print(geom.wkbType())
+                        if geom.wkbType() == 5:
+                            #print(geom)
+                            x = geom.asMultiPolyline()
+                            self.export_multipolyline_xml(x,fp)
+                        else:
+                            x = geom.asPolyline()
+                            print ("Poly Line: %d points" % len(x))
+                            fp.write("<polyline color=\"3\" linetype=\"0\" linesize=\"0\">\n")
+                            #fp.write("<fillarea color=\"15\" linetype=\"0\" filltype=\"0\" linesize=\"1\">\n")
+                            fp.write("<coords type=\"decimal\">\n")
 
-                        x = geom.asPolyline()
-                        print ("Line: %d points" % len(x))
-                        i = 0
-                        for pt in x:
-                                trans=self.transform4326.transform(pt)
-                                s=trans.toString()
-                                #print "pt", pt,s
-                                #point=s[s.find("(")+1:s.find(")")]
-                                #point=s.trim()
-                                i += 1
-                                #Last point == first point, we dont want that
-                                if i<len(x)+1:
-                                    point = re.sub(r"\s+", "", s, flags=re.UNICODE)
-                                    fp.write(point)
-                                    fp.write("\n")
-                        fp.write("</coords>\n")
-                        fp.write("</polyline>\n")
-                        #fp.write("</fillarea>\n")
-                
+                            x = geom.asPolyline()
+                            print ("Line: %d points" % len(x))
+                            i = 0
+                            for pt in x:
+                                    trans=self.transform4326.transform(pt)
+                                    s=trans.toString()
+                                    #print "pt", pt,s
+                                    #point=s[s.find("(")+1:s.find(")")]
+                                    #point=s.trim()
+                                    i += 1
+                                    #Last point == first point, we dont want that
+                                    if i<len(x)+1:
+                                        point = re.sub(r"\s+", "", s, flags=re.UNICODE)
+                                        fp.write(point)
+                                        fp.write("\n")
+                            fp.write("</coords>\n")
+                            fp.write("</polyline>\n")
+                            #fp.write("</fillarea>\n")                
                     elif geom.type() == 2:
                     # QGis.Polygon:
                         x = geom.asPolygon()
